@@ -1,0 +1,9 @@
+node_modules/
+target/
+*.tar.bz2*
+*.zip
+solana-release/
+.DS_Store
+.env
+*.crate
+.anchor

@@ -1,0 +1,72 @@
+// BEM: Button component
+.button {
+  @include button-base;
+
+  // Variants
+  &--primary {
+    background: linear-gradient(90deg, $primary-color, $secondary-color);
+    color: $text-primary;
+    @include hover-glow($primary-color);
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  &--secondary {
+    background: transparent;
+    border: 2px solid $primary-color;
+    color: $primary-color;
+
+    &:hover {
+      background: rgba($primary-color, 0.1);
+    }
+  }
+
+  &--danger {
+    background: $error-color;
+    color: $text-primary;
+
+    &:hover {
+      background: darken($error-color, 10%);
+    }
+  }
+
+  // Sizes
+  &--small {
+    padding: $spacing-xs $spacing-sm;
+    font-size: 0.875rem;
+  }
+
+  &--large {
+    padding: $spacing-md $spacing-lg;
+    font-size: 1.125rem;
+  }
+
+  // States
+  &--loading {
+    position: relative;
+    color: transparent;
+
+    &::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      top: 50%;
+      left: 50%;
+      margin-left: -8px;
+      margin-top: -8px;
+      border: 2px solid $text-primary;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 0.6s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

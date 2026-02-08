@@ -1,0 +1,91 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #0f0f13;
+  color: white;
+  min-height: 100vh;
+  /* Hide scrollbar for cleaner UI */
+  overflow: -moz-scrollbars-none;
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Remove Arrows/Spinners from number input */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Wallet Adapter Custom Overrides */
+.wallet-adapter-button {
+  background-color: rgba(124, 58, 237, 0.1) !important;
+  border: 1px solid rgba(124, 58, 237, 0.3) !important;
+  color: #a78bfa !important;
+  font-family: inherit !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  height: 48px !important;
+  border-radius: 12px !important;
+  padding: 0 24px !important;
+  transition: all 0.2s ease !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.wallet-adapter-button:not([disabled]):hover {
+  background-color: rgba(124, 58, 237, 0.2) !important;
+  border-color: #a78bfa !important;
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+.wallet-adapter-button-trigger {
+  background-color: rgba(124, 58, 237, 0.8) !important;
+}
+
+/* Connect Button State */
+.wallet-adapter-button[disabled] {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  border-color: transparent !important;
+}
+
+/* Dropdown Menu */
+.wallet-adapter-dropdown-list {
+  background: #181822 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  padding: 8px !important;
+  margin-top: 12px !important;
+}
+
+.wallet-adapter-dropdown-list-item {
+  border-radius: 8px !important;
+  font-family: inherit !important;
+  font-weight: 500 !important;
+  font-size: 0.95rem !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  padding: 10px 16px !important;
+  transition: all 0.2s ease !important;
+}
+
+.wallet-adapter-dropdown-list-item:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #fff !important;
+}
+
+.wallet-adapter-dropdown-list-item:not([disabled]):hover {
+  background-color: rgba(124, 58, 237, 0.1) !important;
+}

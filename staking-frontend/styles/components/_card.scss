@@ -1,0 +1,37 @@
+// BEM: Card component
+.card {
+  @include card;
+
+  &__header {
+    @include flex-between;
+    margin-bottom: $spacing-md;
+    padding-bottom: $spacing-sm;
+    border-bottom: 1px solid rgba($text-secondary, 0.2);
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    @include gradient-text;
+  }
+
+  &__body {
+    margin-bottom: $spacing-md;
+  }
+
+  &__footer {
+    @include flex-between;
+    padding-top: $spacing-sm;
+    border-top: 1px solid rgba($text-secondary, 0.2);
+  }
+
+  // Variants
+  &--highlighted {
+    border: 2px solid $primary-color;
+    @include hover-glow;
+  }
+
+  &--compact {
+    padding: $spacing-md;
+  }
+}

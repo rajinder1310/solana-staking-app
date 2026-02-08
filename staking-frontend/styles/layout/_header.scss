@@ -1,0 +1,38 @@
+// BEM: Header layout
+.header {
+  @include flex-between;
+  padding: $spacing-md $spacing-lg;
+  background: rgba($background-light, 0.8);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  &__logo {
+    @include flex-center;
+    gap: $spacing-sm;
+    font-size: 1.5rem;
+    font-weight: 700;
+    @include gradient-text;
+  }
+
+  &__nav {
+    display: flex;
+    gap: $spacing-md;
+    align-items: center;
+  }
+
+  &__link {
+    padding: $spacing-xs $spacing-sm;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: $primary-color;
+    }
+
+    &--active {
+      color: $primary-color;
+      font-weight: 600;
+    }
+  }
+}

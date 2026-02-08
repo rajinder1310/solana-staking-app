@@ -1,0 +1,125 @@
+import * as anchor from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
+import { StakingContract } from "../target/types/staking_contract";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
+import {
+  TOKEN_PROGRAM_ID,
+  createMint,
+  getOrCreateAssociatedTokenAccount,
+  mintTo
+} from "@solana/spl-token";
+
+describe("Deposit 1999 tokens", () => {
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
+
+  const program = anchor.workspace.StakingContract as Program<StakingContract>;
+
+  // Variables
+  let mint: PublicKey;
+  let vault: PublicKey;
+  let config: PublicKey;
+  let userTokenAccount: PublicKey;
+  let userStakeInfo: PublicKey;
+
+  // Use the provider wallet which matches ADMIN_PUBKEY in constants.rs
+  // HfLwDVax4RaftkctDGGw5a84jheVZtSint919Xy9D3dD is the provider wallet in localnet usually if configured
+  const user = provider.wallet as any;
+
+  it("Setup and Deposit 1999 tokens", async () => {
+    // 1. Create Mint
+    mint = await createMint(
+      provider.connection,
+      user.payer,
+      user.publicKey,
+      null,
+      6
+    );
+    console.log(`Created Mint: ${mint.toString()}`);
+
+    // 2. Derive PDAs
+    [config] = PublicKey.findProgramAddressSync(
+      [Buffer.from("config")],
+      program.programId
+    );
+    [vault] = PublicKey.findProgramAddressSync(
+      [Buffer.from("vault"), mint.toBuffer()],
+      program.programId
+    );
+    [userStakeInfo] = PublicKey.findProgramAddressSync(
+      [Buffer.from("user"), user.publicKey.toBuffer()],
+      program.programId
+    );
+
+    // 3. Initialize Contract
+    try {
+      await program.methods
+        .initialize(new anchor.BN(100)) // 1% Fee
+        .accounts({
+          vault: vault,
+          config: config,
+          mint: mint,
+          payer: user.publicKey,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        })
+        .rpc();
+      console.log("Initialized Contract");
+    } catch (e) {
+      // If already initialized (global config), might fail?
+      // But mint is new, so vault init should work.
+      // Config init might fail if global config already exists.
+      // Since `config` PDA is global (seeds=["config"]), it clashes if tests run against same validator state.
+      // For this isolated test, we assume clean slate or we should catch 'already in use'.
+      console.log("Initialization step (might allow skipping if config exists):", e.message);
+    }
+
+    // 4. Create User Token Account & Mint Tokens
+    const ata = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      user.payer,
+      mint,
+      user.publicKey
+    );
+    userTokenAccount = ata.address;
+
+    // Mint enough tokens (2000)
+    await mintTo(
+      provider.connection,
+      user.payer,
+      mint,
+      userTokenAccount,
+      user.publicKey,
+      2000 * 1_000_000 // 6 decimals
+    );
+    console.log("Minted 2000 tokens to user");
+
+    // 5. Deposit 1999 Tokens
+    const depositAmount = new anchor.BN(1999 * 1_000_000); // 6 decimals
+    console.log(`Depositing: ${depositAmount.toString()}`);
+
+    const tx = await program.methods
+      .deposit(depositAmount)
+      .accounts({
+        staker: user.publicKey,
+        stakeInfo: userStakeInfo,
+        stakerTokenAccount: userTokenAccount,
+        vault: vault,
+        mint: mint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    console.log(`✅ Deposit successful! Tx: ${tx}`);
+
+    // 6. Verify
+    const stakeAccount = await program.account.userStakeInfo.fetch(userStakeInfo);
+    console.log(`Staked Amount: ${stakeAccount.amount.toString()}`);
+
+    // Check constraints if using chai
+    // import { assert } from "chai";
+    // assert.equal(stakeAccount.amount.toNumber(), depositAmount.toNumber());
+  });
+});

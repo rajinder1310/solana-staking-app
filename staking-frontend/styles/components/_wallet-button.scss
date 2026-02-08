@@ -1,0 +1,6 @@
+// Wallet button placeholder
+.wallet-button {
+  @include button-base;
+  background: linear-gradient(90deg, $primary-color, $secondary-color);
+  @include hover-glow;
+}

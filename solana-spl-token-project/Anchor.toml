@@ -1,0 +1,19 @@
+[toolchain]
+
+[features]
+seeds = false
+skip-lint = false
+
+[programs.localnet]
+staking_contract = "9vF8iR37L3nKtBR4x6mhy8dE8eMLUzcuCNbSCGCpnYHG"
+token_contract = "UY89vX8nRLbuy8LZCZy9ThMbNp1669Bi7Ue9uMwZC6P"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Localnet"
+wallet = "/home/user/.config/solana/deployer.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

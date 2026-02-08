@@ -1,0 +1,79 @@
+// Responsive breakpoints
+@mixin respond-to($breakpoint) {
+  @if $breakpoint =='sm' {
+    @media (min-width: $breakpoint-sm) {
+      @content;
+    }
+  }
+
+  @else if $breakpoint =='md' {
+    @media (min-width: $breakpoint-md) {
+      @content;
+    }
+  }
+
+  @else if $breakpoint =='lg' {
+    @media (min-width: $breakpoint-lg) {
+      @content;
+    }
+  }
+
+  @else if $breakpoint =='xl' {
+    @media (min-width: $breakpoint-xl) {
+      @content;
+    }
+  }
+}
+
+// Flexbox utilities
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// Button base
+@mixin button-base {
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-md;
+  font-weight: 600;
+  transition: all $transition-normal;
+  cursor: pointer;
+  border: none;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Card
+@mixin card {
+  background: $background-light;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+// Gradient text
+@mixin gradient-text {
+  background: linear-gradient(90deg, $primary-color, $secondary-color);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// Hover glow effect
+@mixin hover-glow($color: $primary-color) {
+  transition: box-shadow $transition-normal;
+
+  &:hover {
+    box-shadow: 0 0 20px rgba($color, 0.5);
+  }
+}

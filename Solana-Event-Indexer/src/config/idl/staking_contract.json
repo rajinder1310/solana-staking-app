@@ -1,0 +1,82 @@
+{
+  "version": "0.1.0",
+  "name": "staking_contract",
+  "instructions": [],
+  "accounts": [],
+  "types": [],
+  "events": [
+    {
+      "name": "TokensStaked",
+      "fields": [
+        {
+          "name": "staker",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          },
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "totalStaked",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "TokensWithdrawn",
+      "fields": [
+        {
+          "name": "staker",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          },
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "fee",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "totalStaked",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "FeeUpdated",
+      "fields": [
+        {
+          "name": "oldFee",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "newFee",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "address": "9vF8iR37L3nKtBR4x6mhy8dE8eMLUzcuCNbSCGCpnYHG"
+  }
+}

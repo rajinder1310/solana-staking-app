@@ -1,0 +1,55 @@
+// BEM: Input component
+.input {
+  &__wrapper {
+    margin-bottom: $spacing-md;
+  }
+
+  &__label {
+    display: block;
+    margin-bottom: $spacing-xs;
+    font-weight: 600;
+    color: $text-secondary;
+  }
+
+  &__field {
+    width: 100%;
+    padding: $spacing-sm;
+    background: $background-dark;
+    border: 2px solid rgba($text-secondary, 0.3);
+    border-radius: $radius-md;
+    color: $text-primary;
+    transition: border-color $transition-normal;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+    }
+
+    &::placeholder {
+      color: rgba($text-secondary, 0.5);
+    }
+  }
+
+  &__error {
+    margin-top: $spacing-xs;
+    color: $error-color;
+    font-size: 0.875rem;
+  }
+
+  &__helper {
+    margin-top: $spacing-xs;
+    color: $text-secondary;
+    font-size: 0.875rem;
+  }
+
+  // States
+  &--error &__field {
+    border-color: $error-color;
+  }
+
+  &--disabled &__field {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
