@@ -45,5 +45,4 @@ pub struct Initialize<'info> {
 
     pub system_program: Program<'info, System>, // Solana system program
     pub token_program: Program<'info, Token>,   // SPL Token program
-    pub rent: Sysvar<'info, Rent>,              // Rent sysvar
 }

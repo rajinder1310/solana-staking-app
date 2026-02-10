@@ -12,6 +12,9 @@ pub fn withdraw(ctx: Context<Withdraw>) -> Result<()> {
     // If balance is 0, throw error.
     require!(stake_info.amount > 0, ErrorCode::InvalidWithdraw);
 
+    // Security Check: Ensure fee_vault belongs to admin
+    require_keys_eq!(ctx.accounts.fee_vault.owner, ctx.accounts.config.admin, ErrorCode::Unauthorized);
+
     let total_amount = stake_info.amount; // Withdraw everything
 
     // Dynamic Fee Calculation
@@ -29,11 +32,12 @@ pub fn withdraw(ctx: Context<Withdraw>) -> Result<()> {
     let mint_key = ctx.accounts.mint.key();     // Token mint address
 
     // PDA Seeds for Signing (Vault will sign itself)
-    let signer_seeds: &[&[&[u8]]] = &[&[
+    let seeds = &[
         b"vault",
         mint_key.as_ref(),
-        &[bump]
-    ]];
+        &[bump],
+    ];
+    let signer_seeds = &[&seeds[..]];
 
     // 2a. Transfer Fee (Vault -> Fee Vault)
     if fee_amount > 0 {

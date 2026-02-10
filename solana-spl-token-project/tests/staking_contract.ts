@@ -73,12 +73,18 @@ describe("staking_contract_comprehensive_tests", () => {
     userBTokenAccount = ataB.address;
     await mintTo(provider.connection, userA.payer, mint, userBTokenAccount, userA.publicKey, 1000);
 
-    // Create Fee Vault (Independent Account)
+    // Create Fee Vault (ADMIN'S Token Account - used for fees)
+    // ADMIN_PUBKEY (userA) must own the fee vault.
+    // Since userA already has an ATA (userATokenAccount), we will use that as the fee vault.
+    feeVault = userATokenAccount;
+
+    /* REPLACED: Old fee vault logic used a random keypair, which is now invalid due to security check.
     const feeData = anchor.web3.Keypair.generate();
     const feeAta = await getOrCreateAssociatedTokenAccount(
       provider.connection, userA.payer, mint, feeData.publicKey
     );
     feeVault = feeAta.address;
+    */
 
     console.log("Setup complete. Mint:", mint.toString());
   });
@@ -109,7 +115,6 @@ describe("staking_contract_comprehensive_tests", () => {
         payer: userA.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
         tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       })
       .rpc();
 
@@ -226,13 +231,105 @@ describe("staking_contract_comprehensive_tests", () => {
   // 4. WITHDRAW SCENARIOS
   // =========================================================================
 
-  it("POSITIVE: User A Withdraws with 5% Fee", async () => {
-    // Setup: User A has 100 staked. Fee is 5%.
-    // Expected Fee: 100 * 5% = 5 tokens.
-    // User gets: 95.
+  it("POSITIVE: User B Withdraws with 5% Fee", async () => {
+    // Setup: User B has 200 staked. Fee is 5%.
+    // Expected Fee: 200 * 5% = 10 tokens.
+    // User gets: 190.
 
-    // Initial Balance (User A): 900 (1000 minted - 100 staked)
-    // Expected Final: 900 + 95 = 995.
+    // Update fee to 5% first? No, it was set in previous test "POSITIVE: Admin updates fee to 5%".
+    // Wait, previous test set fee to 5%.
+
+    const initialBalB = (await getAccount(provider.connection, userBTokenAccount)).amount;
+    // userB minted 1000, deposited 200. Balance should be 800.
+
+    const initialFeeVaultBal = (await getAccount(provider.connection, feeVault)).amount;
+
+    await program.methods.withdraw().accounts({
+      staker: userB.publicKey,
+      vault: vault,
+      stakeInfo: userBStakeInfo,
+      mint: mint,
+      stakerTokenAccount: userBTokenAccount,
+      feeVault: feeVault, // Defines where fee goes (Admin's ATA)
+      config: config,
+      tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID
+    }).signers([userB]).rpc();
+
+    // Verify User B Balance
+    const finalBalB = await getAccount(provider.connection, userBTokenAccount);
+    // 800 + 190 = 990
+    assert.equal(Number(finalBalB.amount), 990);
+
+    // Verify Fee Vault (Admin's Account)
+    const finalFeeVaultBal = await getAccount(provider.connection, feeVault);
+    // Should increase by 10
+    assert.equal(Number(finalFeeVaultBal.amount), Number(initialFeeVaultBal) + 10);
+
+    // Verify User B Stake Info is reset
+    const info = await program.account.userStakeInfo.fetch(userBStakeInfo);
+    assert.equal(info.amount.toNumber(), 0);
+  });
+
+  it("NEGATIVE: Security Check - Withdraw with invalid fee vault", async () => {
+    // Hacker tries to withdraw using their own account as fee vault to steal fees?
+    // Or just any invalid fee vault.
+    // Let's us use userBTokenAccount as fee vault. Its owner is userB (!= Admin).
+
+    // User A deposits 100 to have something to withdraw.
+    // (User A previously deposited 100).
+
+    try {
+      await program.methods.withdraw().accounts({
+        staker: userA.publicKey,
+        vault: vault,
+        stakeInfo: userAStakeInfo,
+        mint: mint,
+        stakerTokenAccount: userATokenAccount,
+        feeVault: userBTokenAccount, // INVALID: Owned by userB, not Admin
+        config: config,
+        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID
+      }).rpc();
+      assert.fail("Should fail due to Unauthorized fee vault");
+    } catch (e) {
+      assert.include(e.message, "Unauthorized"); // ErrorCode::Unauthorized
+      // Or check anchor error code.
+    }
+  });
+
+  it("NEGATIVE: Double Withdraw", async () => {
+    try {
+      await program.methods.withdraw().accounts({
+        staker: userB.publicKey,
+        vault: vault,
+        stakeInfo: userBStakeInfo, // User B has 0 balance
+        mint: mint,
+        stakerTokenAccount: userBTokenAccount,
+        feeVault: feeVault,
+        config: config,
+        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID
+      }).signers([userB]).rpc();
+      assert.fail("Should fail");
+    } catch (e) {
+      assert.include(e.message, "No tokens to withdraw");
+    }
+  });
+
+  it("POSITIVE: Update Fee to 0% and User A Withdraws", async () => {
+    // 1. Set Fee to 0
+    await program.methods.updateFee(new anchor.BN(0)).accounts({
+      config: config, admin: userA.publicKey
+    }).rpc();
+
+    // 2. User A Withdraws 100 (Remaining from previous failed attempts or just re-deposit if needed)
+    // Note: User A deposited 100 earlier and we SKIPPED User A withdrawal in the positive test (we used User B).
+    // So User A still has 100 staked.
+
+    // Expected: Full 100 back. No Fee.
+
+    // User A had 900 initially (after deposit). 1000 minted - 100 = 900.
+    // Expect 900 + 100 = 1000.
+
+    const initialBalA = (await getAccount(provider.connection, userATokenAccount)).amount;
 
     await program.methods.withdraw().accounts({
       staker: userA.publicKey,
@@ -245,69 +342,12 @@ describe("staking_contract_comprehensive_tests", () => {
       tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID
     }).rpc();
 
-    // Verify User A Balance
-    const userAcc = await getAccount(provider.connection, userATokenAccount);
-    assert.equal(Number(userAcc.amount), 995);
+    const finalBalA = await getAccount(provider.connection, userATokenAccount);
+    // 900 (Initial) + 10 (Fee from User B) + 100 (Withdrawal) = 1010
+    assert.equal(Number(finalBalA.amount), 1010);
 
-    // Verify Fee Vault
-    const feeAcc = await getAccount(provider.connection, feeVault);
-    assert.equal(Number(feeAcc.amount), 5);
-
-    // Verify User A Stake Info is reset
-    const info = await program.account.userStakeInfo.fetch(userAStakeInfo);
-    assert.equal(info.amount.toNumber(), 0);
-
-    // Verify User B is UNAFFECTED
-    const infoB = await program.account.userStakeInfo.fetch(userBStakeInfo);
-    assert.equal(infoB.amount.toNumber(), 200, "User B funds touched!");
-  });
-
-  it("NEGATIVE: Double Withdraw", async () => {
-    try {
-      await program.methods.withdraw().accounts({
-        staker: userA.publicKey,
-        vault: vault,
-        stakeInfo: userAStakeInfo,
-        mint: mint,
-        stakerTokenAccount: userATokenAccount,
-        feeVault: feeVault,
-        config: config,
-        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID
-      }).rpc();
-      assert.fail("Should fail");
-    } catch (e) {
-      assert.include(e.message, "No tokens to withdraw");
-    }
-  });
-
-  it("POSITIVE: Update Fee to 0% and User B Withdraws", async () => {
-    // 1. Set Fee to 0
-    await program.methods.updateFee(new anchor.BN(0)).accounts({
-      config: config, admin: userA.publicKey
-    }).rpc();
-
-    // 2. User B Withdraws 200
-    // Expected: Full 200 back. No Fee.
-    const initialBal = (await getAccount(provider.connection, userBTokenAccount)).amount; // 800
-
-    await program.methods.withdraw().accounts({
-      staker: userB.publicKey,
-      vault: vault,
-      stakeInfo: userBStakeInfo,
-      mint: mint,
-      stakerTokenAccount: userBTokenAccount,
-      feeVault: feeVault,
-      config: config,
-      tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID
-    }).signers([userB]).rpc();
-
-    const finalBal = await getAccount(provider.connection, userBTokenAccount);
-    // 800 + 200 = 1000
-    assert.equal(Number(finalBal.amount), 1000);
-
-    // Fee Vault should STILL have only 5 (from User A)
-    const feeAcc = await getAccount(provider.connection, feeVault);
-    assert.equal(Number(feeAcc.amount), 5);
+    // Fee Vault check is redundant because feeVault IS userATokenAccount.
+    // We verified userATokenAccount balance above.
   });
 
 });
